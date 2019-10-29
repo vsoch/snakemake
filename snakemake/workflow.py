@@ -73,7 +73,6 @@ class Workflow:
         overwrite_clusterconfig=dict(),
         config_args=None,
         debug=False,
-        verbose=False,
         use_conda=False,
         conda_prefix=None,
         use_singularity=False,
@@ -88,7 +87,7 @@ class Workflow:
         default_remote_provider=None,
         default_remote_prefix="",
         run_local=True,
-        default_resources=None,
+        default_resources=dict(),
     ):
         """
         Create the controller.
@@ -122,7 +121,6 @@ class Workflow:
         self._onstart = lambda log: None
         self._wildcard_constraints = dict()
         self.debug = debug
-        self.verbose = verbose
         self._rulecount = 0
         self.use_conda = use_conda
         self.conda_prefix = conda_prefix
@@ -360,6 +358,7 @@ class Workflow:
         cleanup_metadata=None,
         cleanup_conda=False,
         cleanup_shadow=False,
+        cleanup_scripts=True,
         subsnakemake=None,
         updated_files=None,
         keep_target_files=False,
@@ -376,7 +375,6 @@ class Workflow:
         cluster_status=None,
         report=None,
         export_cwl=False,
-        batch=None,
     ):
 
         self.check_localrules()
@@ -385,6 +383,7 @@ class Workflow:
         self.global_resources["_cores"] = cores
         self.global_resources["_nodes"] = nodes
         self.immediate_submit = immediate_submit
+        self.cleanup_scripts = cleanup_scripts
 
         def rules(items):
             return map(self._rules.__getitem__, filter(self.is_rule, items))
@@ -469,7 +468,6 @@ class Workflow:
             or printfilegraph,
             notemp=notemp,
             keep_remote_local=keep_remote_local,
-            batch=batch,
         )
 
         self.persistence = Persistence(
@@ -739,8 +737,7 @@ class Workflow:
                 if cluster or cluster_sync or drmaa:
                     logger.resources_info("Provided cluster nodes: {}".format(nodes))
                 else:
-                    warning = "" if cores > 1 else " (use --cores to define parallelism)"
-                    logger.resources_info("Provided cores: {}{}".format(cores, warning))
+                    logger.resources_info("Provided cores: {}".format(cores))
                     logger.resources_info(
                         "Rules claiming more threads " "will be scaled down."
                     )

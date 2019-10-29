@@ -367,6 +367,7 @@ class CPUExecutor(RealExecutor):
             self.workflow.use_singularity,
             self.workflow.linemaps,
             self.workflow.debug,
+            self.workflow.cleanup_scripts,
             job.shadow_dir,
             job.jobid,
         )
@@ -1903,6 +1904,7 @@ def run_wrapper(
     use_singularity,
     linemaps,
     debug,
+    cleanup_scripts,
     shadow_dir,
     jobid,
 ):
@@ -1979,6 +1981,7 @@ def run_wrapper(
                             jobid,
                             is_shell,
                             bench_iteration,
+                            cleanup_scripts,
                             passed_shadow_dir,
                         )
                     else:
@@ -2004,7 +2007,8 @@ def run_wrapper(
                                 jobid,
                                 is_shell,
                                 bench_iteration,
-                                passed_shadow_dir,
+                                cleanup_scripts,
+                                passed_shadow_dir
                             )
                     # Store benchmark record for this iteration
                     bench_records.append(bench_record)
@@ -2027,7 +2031,8 @@ def run_wrapper(
                     jobid,
                     is_shell,
                     None,
-                    passed_shadow_dir,
+                    cleanup_scripts,
+                    passed_shadow_dir
                 )
     except (KeyboardInterrupt, SystemExit) as e:
         # Re-raise the keyboard interrupt in order to record an error in the

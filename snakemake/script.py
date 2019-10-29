@@ -52,7 +52,7 @@ class REncoder:
             return "TRUE" if value else "FALSE"
         elif isinstance(value, int) or isinstance(value, float):
             return str(value)
-        elif isinstance(value, collections.abc.Iterable):
+        elif isinstance(value, collections.Iterable):
             # convert all iterables to vectors
             return cls.encode_list(value)
         else:
@@ -111,7 +111,7 @@ class JuliaEncoder:
             return "true" if value else "false"
         elif isinstance(value, int) or isinstance(value, float):
             return str(value)
-        elif isinstance(value, collections.abc.Iterable):
+        elif isinstance(value, collections.Iterable):
             # convert all iterables to vectors
             return cls.encode_list(value)
         else:
@@ -298,6 +298,7 @@ def script(
     bench_record,
     jobid,
     bench_iteration,
+    cleanup_scripts,
     shadow_dir,
 ):
     """
@@ -563,5 +564,7 @@ def script(
     except URLError as e:
         raise WorkflowError(e)
     finally:
-        if f:
+        if f and cleanup_scripts:
             os.remove(f.name)
+        else:
+            logger.debug("Not cleaning up %s" % f.name)
