@@ -114,7 +114,7 @@ class DAG:
         self.priorityrules = priorityrules
         self.targetjobs = set()
         self.prioritytargetjobs = set()
-        self._ready_jobs = set()
+        self._ready_jobs = list()
         self.notemp = notemp
         self.keep_remote_local = keep_remote_local
         self._jobid = dict()
@@ -1044,29 +1044,33 @@ class DAG:
         self._group = groups
 
     def update_ready(self, jobs=None):
-        """Update information whether a job is ready to execute.
+        """Update information whether a job is ready to execute. While it's not
+           as efficient to use a list over a set for self._ready_jobs, if we use
+           a set we lose the ordering provided by the user, so we use a list instead.
 
         Given jobs must be needrun jobs!
         """
-
         if jobs is None:
             jobs = self.needrun_jobs
 
         candidate_groups = set()
         for job in jobs:
             if not self.finished(job) and self._ready(job):
-                if job.group is None:
-                    self._ready_jobs.add(job)
+                if job.group is None and job not in self._ready_jobs:
+                    self._ready_jobs.append(job)
                 else:
                     group = self._group[job]
                     group.finalize()
                     candidate_groups.add(group)
 
-        self._ready_jobs.update(
+        # Add group jobs to ready jobs
+        for group_job in [
             group
             for group in candidate_groups
             if all(self._ready(job) for job in group)
-        )
+        ]:
+            if group_job not in self._ready_jobs:
+                self._ready_jobs.append(group_job)
 
     def get_jobs_or_groups(self):
         visited_groups = set()
@@ -1216,10 +1220,8 @@ class DAG:
     def finish(self, job, update_dynamic=True):
         """Finish a given job (e.g. remove from ready jobs, mark depending jobs
         as ready)."""
-        try:
-            self._ready_jobs.remove(job)
-        except KeyError:
-            pass
+        if job in self._ready_jobs:
+            self._ready_jobs.pop(self._read_jobs.index(job))
 
         if job.is_group():
             jobs = job
@@ -1360,7 +1362,7 @@ class DAG:
         if job in self._dynamic:
             self._dynamic.remove(job)
         if job in self._ready_jobs:
-            self._ready_jobs.remove(job)
+            self._ready_jobs.pop(self._ready_jobs.index(job))
         # remove from cache
         for f in job.output:
             try:

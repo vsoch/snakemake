@@ -396,6 +396,7 @@ class CPUExecutor(RealExecutor):
         # Zero thread jobs do not need a thread, but they occupy additional workers.
         # Hence we need to reserve additional workers for them.
         self.workers = workers + 5
+
         self.pool = concurrent.futures.ThreadPoolExecutor(max_workers=self.workers)
 
     def run(self, job, callback=None, submit_callback=None, error_callback=None):

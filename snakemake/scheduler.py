@@ -1,5 +1,5 @@
 __author__ = "Johannes Köster"
-__copyright__ = "Copyright 2015-2019, Johannes Köster"
+__copyright__ = "Copyright 2015-2020, Johannes Köster"
 __email__ = "koester@jimmy.harvard.edu"
 __license__ = "MIT"
 
@@ -102,8 +102,8 @@ class JobScheduler:
         self.touch = touch
         self.quiet = quiet
         self.keepgoing = keepgoing
-        self.running = set()
-        self.failed = set()
+        self.running = list()
+        self.failed = list()
         self.finished_jobs = 0
         self.greediness = 1
         self.max_jobs_per_second = max_jobs_per_second
@@ -414,7 +414,8 @@ class JobScheduler:
                     )
                 # update running jobs
                 with self._lock:
-                    self.running.update(run)
+                    if run not in self.running:
+                        self.running.append(run)
 
                 # actually run jobs
                 local_runjobs = [job for job in run if job.is_local]
@@ -431,6 +432,7 @@ class JobScheduler:
     def run(self, jobs, executor=None):
         if executor is None:
             executor = self._executor
+
         executor.run_jobs(
             jobs,
             callback=self._finish_callback,
@@ -485,7 +487,8 @@ class JobScheduler:
             if update_resources:
                 # normal jobs have len=1, group jobs have len>1
                 self.finished_jobs += len(job)
-                self.running.remove(job)
+                if job in self.running:
+                    self.running.pop(self.running.index(job))
                 self._free_resources(job)
 
             if print_progress:
@@ -516,7 +519,8 @@ class JobScheduler:
         try to run the job again.
         """
         self.get_executor(job).handle_job_error(job)
-        self.running.remove(job)
+        if job in self.running:
+            self.running.pop(self.running.index(job))
         self._free_resources(job)
         # attempt starts counting from 1, but the first attempt is not
         # a restart, hence we subtract 1.
@@ -525,7 +529,8 @@ class JobScheduler:
             job.attempt += 1
         else:
             self._errors = True
-            self.failed.add(job)
+            if job not in self.failed:
+                self.failed.append(job)
             if self.keepgoing:
                 logger.info("Job failed, going on with independent jobs.")
         self._open_jobs.release()

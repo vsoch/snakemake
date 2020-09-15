@@ -736,6 +736,7 @@ class Workflow:
             self.globals.update(globals_backup)
 
         dag.postprocess()
+
         if not dryrun:
             # deactivate IOCache such that from now on we always get updated
             # size, existence and mtime information
