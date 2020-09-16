@@ -927,6 +927,10 @@ def test_filegraph():
     assert os.stat(pdf_path).st_size > 0
 
 
+def test_aggregate_order():
+    run(dpath("test_aggregate_order"))
+
+
 def test_batch():
     from snakemake.dag import Batch
 
