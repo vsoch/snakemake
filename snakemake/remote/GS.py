@@ -240,6 +240,7 @@ class RemoteObject(AbstractRemoteObject):
                         blob = self.bucket.blob(bucket_path)
                         blob.upload_from_filename(filename)
             else:
+                print(self.blob)
                 self.blob.upload_from_filename(f)
         except google.cloud.exceptions.Forbidden as e:
             raise WorkflowError(
